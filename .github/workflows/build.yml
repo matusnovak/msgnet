@@ -1,0 +1,60 @@
+name: build
+on:
+  push:
+    branches:
+      - '*'
+    tags:
+      - '*'
+  pull_request:
+    branches:
+      - '*'
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'Windows'
+            os: windows-latest
+            generator: 'Visual Studio 17 2022'
+            arch: '-A x64'
+            vcpkg_dir: 'C:\vcpkg'
+          - name: 'Linux'
+            os: ubuntu-latest
+            generator: 'Ninja'
+            vcpkg_dir: '/usr/local/share/vcpkg'
+            arch: ''
+          - name: 'Mac OSX'
+            os: macos-latest
+            generator: 'Ninja'
+            vcpkg_dir: '/usr/local/share/vcpkg'
+            arch: ''
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Configure
+        shell: bash
+        run: |
+          mkdir build
+          cmake \
+            -B ./build \
+            -G "${{ matrix.generator }}" ${{ matrix.arch }} \
+            -DMSGNET_BUILD_TESTS=ON \
+            -DMSGNET_BUILD_EXAMPLES=ON \
+            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
+            --config Debug \
+            .
+
+      - name: Compile
+        shell: bash
+        run: |
+          cmake --build ./build --config Debug
+
+      - name: Tests
+        shell: bash
+        run: cd build && ctest -C Debug --verbose
