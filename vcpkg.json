@@ -3,23 +3,19 @@
   "version-string": "0.1.0",
   "dependencies": [
     {
-      "name": "msgpack",
-      "version>=": "3.3.0"
+      "name": "msgpack"
     },
     {
       "name": "asio",
-      "version>=": "1.20.0",
       "features": [
         "openssl"
       ]
     },
     {
-      "name": "catch2",
-      "version>=": "2.13.8"
+      "name": "catch2"
     },
     {
       "name": "lz4"
     }
-  ],
-  "builtin-baseline": "1085a57da0725c19e19586025438e8c16f34c890"
+  ]
 }
