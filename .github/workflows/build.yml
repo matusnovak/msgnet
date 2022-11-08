@@ -71,7 +71,7 @@ jobs:
           mkdir build
           cmake \
             -B ./build \
-            -G "${{ matrix.generator }}" ${{ matrix.arch }} \
+            -G "Unix Makefiles" \
             -DMSGNET_BUILD_TESTS=ON \
             -DMSGNET_TEST_COVERAGE=ON \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
@@ -93,7 +93,37 @@ jobs:
           lcov --remove ./build/coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/catch2/*' '*/test/*' --output-file ./build/coverage.info
           lcov --list ./build/coverage.info
 
-      - name: Upload coverage
+      - name: Upload the coverage
         shell: bash
         run: |
           bash <(curl -s https://codecov.io/bash) -f ./build/coverage.info || echo "Codecov did not collect coverage reports"
+
+  lsan:
+    name: 'LSAN Build'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v1
+
+      - name: Configure
+        shell: bash
+        run: |
+          mkdir build
+          export CC=/usr/bin/clang
+          export CXX=/usr/bin/clang++
+          cmake \
+            -B ./build \
+            -G "Unix Makefiles" \
+            -DMSGNET_BUILD_TESTS=ON \
+            -DLLVM_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
+            -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
+            .
+
+      - name: Compile
+        shell: bash
+        run: |
+          cmake --build ./build --config Debug
+
+      - name: Tests
+        shell: bash
+        run: cd build && ctest -C Debug --verbose

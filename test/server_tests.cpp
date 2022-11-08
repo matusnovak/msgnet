@@ -229,7 +229,7 @@ TEST_CASE("Send message to the server and get response") {
 
     client.send(bar, [&](MessageBaz res) { promise.set_value(res); });
 
-    REQUIRE(future.wait_for(std::chrono::milliseconds(100)) == std::future_status::ready);
+    REQUIRE(future.wait_for(std::chrono::milliseconds(1000)) == std::future_status::ready);
     MessageBaz baz = future.get();
 
     REQUIRE(baz.value == true);
@@ -345,7 +345,7 @@ TEST_CASE("Custom certificate validation function") {
     REQUIRE_NOTHROW(client.connect("localhost", 8009));
 
     // Wait for server to accept the peer
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 
     REQUIRE(future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready);
     auto received = future.get();

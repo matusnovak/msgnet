@@ -86,7 +86,7 @@ private:
         const auto reqId = nextRequestId.fetch_add(1ULL);
 
         Handler handler{};
-        handler.callback = [handler, fn](const msgpack::object& object) {
+        handler.callback = [fn](const msgpack::object& object) {
             Res res{};
             object.convert(res);
 
