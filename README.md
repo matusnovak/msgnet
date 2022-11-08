@@ -541,6 +541,58 @@ server.close(); // Stops the server, the .run() returns, the thread will stop
 client.close(); // Stops the server, the .run() returns, the thread will stop
 ```
 
+#### What about the handlers and send callbacks?
+
+All handlers and send callbacks are handled by the same thread that runs `getIoService().run()`.
+
+If you wish to handle the callbacks in a polling mode, or on a different thread, you must override the
+following functions below (similarly as for error handling).
+
+You could use it in a situation where you need two threads, one that handles the socket connection,
+and one that handles the message delivery. Additionally, this could be useful for a game where you
+would want to receive message from the game server and update the client graphical state on the same
+thread that runs the graphics.
+
+```cpp
+class PollingServer : public MsgNet::Server {
+public:
+    PollingServer(unsigned int port, const Pkey& pkey, const Dh& ec, const Cert& cert) :
+        MsgNet::Server(port, pkey, ec, cert) {
+        flag.store(true);
+    }
+    
+    void close() {
+        MsgNet::Server::close();
+        flag.reset();
+    }
+
+    void poll() {
+        // Restart the work queue
+        // Does not erase the scheduled work!
+        worker.reset();
+        
+        // Run all scheduled work
+        worker.run();
+    }
+    
+    void pollUntilStopped() {
+        flag = std::make_unique<asio::io_service::work>(worker);
+        worker.reset();
+        worker.run();
+    }
+
+private:
+    void postDispatch(std::function<void()> fn) override {
+        // Schedule the handle or send callback work
+        worker.post(std::forward<decltype(fn)>(fn));
+    }
+    
+    // Where all of the work for .addHandler or .send(..., callback) will be handled!
+    asio::io_service worker;
+    std::unique_ptr<asio::io_service::work> flag;
+};
+```
+
 #### Multiple threads for a single server
 
 You can also create multiple threads and run the same `getIoService().run()` on all of them. This will also
