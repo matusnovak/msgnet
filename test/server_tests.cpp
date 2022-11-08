@@ -191,7 +191,6 @@ TEST_CASE("Connect and disconnect from the server") {
     // Wait for server to handle the disconnect
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-    std::cout << "isConnected?" << std::endl;
     REQUIRE(peers.front()->isConnected() == false);
     REQUIRE(client.isConnected() == false);
 }

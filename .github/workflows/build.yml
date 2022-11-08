@@ -59,8 +59,17 @@ jobs:
         run: cd build && ctest -C Debug --verbose
 
   coverage:
-    name: 'Test Coverage'
-    runs-on: ubuntu-latest
+    name: Test Coverage on ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'Linux'
+            os: ubuntu-latest
+            generator: 'Unix Makefiles'
+            vcpkg_dir: '/usr/local/share/vcpkg'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v1
@@ -71,7 +80,7 @@ jobs:
           mkdir build
           cmake \
             -B ./build \
-            -G "Unix Makefiles" \
+            -G "${{ matrix.generator }}" \
             -DMSGNET_BUILD_TESTS=ON \
             -DMSGNET_TEST_COVERAGE=ON \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
@@ -99,8 +108,17 @@ jobs:
           bash <(curl -s https://codecov.io/bash) -f ./build/coverage.info || echo "Codecov did not collect coverage reports"
 
   lsan:
-    name: 'LSAN Build'
-    runs-on: ubuntu-latest
+    name: Test LSAN on ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: 'Linux'
+            os: ubuntu-latest
+            generator: 'Unix Makefiles'
+            vcpkg_dir: '/usr/local/share/vcpkg'
+
     steps:
       - name: Checkout
         uses: actions/checkout@v1
@@ -113,7 +131,7 @@ jobs:
           export CXX=/usr/bin/clang++
           cmake \
             -B ./build \
-            -G "Unix Makefiles" \
+            -G "${{ matrix.generator }}" \
             -DMSGNET_BUILD_TESTS=ON \
             -DLLVM_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
