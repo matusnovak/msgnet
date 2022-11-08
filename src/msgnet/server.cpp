@@ -24,12 +24,8 @@ void Server::start(bool async) {
     accept();
 
     if (async) {
-        thread = std::thread([this]() { run(); });
+        thread = std::thread([this]() { getIoService().run(); });
     }
-}
-
-void Server::run() {
-    service.run();
 }
 
 void Server::stop() {

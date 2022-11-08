@@ -6,10 +6,9 @@ using namespace MsgNet;
 Client::Client() :
     Dispatcher{static_cast<ErrorHandler&>(*this)},
     work{std::make_unique<asio::io_service::work>(service)},
-    ssl{asio::ssl::context::tlsv13},
-    socket{std::make_shared<Socket>(service, ssl)} {
+    ssl{asio::ssl::context::tlsv13} {
 
-    // ssl.set_verify_mode(asio::ssl::verify_none);
+    ssl.set_verify_mode(asio::ssl::verify_none);
 }
 
 Client::~Client() {
@@ -17,13 +16,18 @@ Client::~Client() {
 }
 
 void Client::start(bool async) {
+    socket = std::make_shared<Socket>(service, ssl);
+
     if (async) {
-        thread = std::thread([this]() { run(); });
+        thread = std::thread([this]() { getIoService().run(); });
     }
 }
 
-void Client::run() {
-    service.run();
+void Client::setVerifyCallback(std::function<bool(Cert)> callback) {
+    ssl.set_verify_mode(asio::ssl::verify_peer | asio::ssl::verify_fail_if_no_peer_cert);
+    ssl.set_verify_callback([callback = std::move(callback)](bool preverified, asio::ssl::verify_context& ctx) {
+        return callback(Cert{ctx});
+    });
 }
 
 void Client::connect(const std::string& address, unsigned int port, int timeout) {

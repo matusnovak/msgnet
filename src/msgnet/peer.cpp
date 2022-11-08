@@ -40,13 +40,19 @@ void Peer::start() {
 }
 
 void Peer::close() {
-    try {
-        if (socket && socket->lowest_layer().is_open()) {
-            socket->lowest_layer().close();
-        }
-    } catch (std::exception& e) {
-        // Already closed
-        (void)e;
+    if (socket) {
+        auto s = socket;
+        socket.reset();
+        s->lowest_layer().cancel();
+        s->async_shutdown([s](const asio::error_code ec) {
+            if (ec && ec != asio::error::eof) {
+                return;
+            }
+
+            asio::error_code ecc;
+            s->lowest_layer().close(ecc);
+            (void)ecc;
+        });
     }
 }
 
@@ -137,7 +143,11 @@ void Peer::sendPacket(std::shared_ptr<msgpack::sbuffer> packet) {
 
         compressed->resize(cmpBytes);
 
-        self->sendBuffer(std::move(compressed));
+        if (self->socket && self->socket->lowest_layer().is_open()) {
+            self->sendBuffer(std::move(compressed));
+        } else {
+            self->errorHandler.onError(self, asio::error::connection_aborted);
+        }
     });
 }
 

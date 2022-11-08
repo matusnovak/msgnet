@@ -18,7 +18,9 @@ public:
 
     void start(bool async = true);
 
-    void run();
+    asio::io_service& getIoService() {
+        return service;
+    }
 
     void stop();
 

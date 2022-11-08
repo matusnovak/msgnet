@@ -191,6 +191,7 @@ TEST_CASE("Connect and disconnect from the server") {
     // Wait for server to handle the disconnect
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
+    std::cout << "isConnected?" << std::endl;
     REQUIRE(peers.front()->isConnected() == false);
     REQUIRE(client.isConnected() == false);
 }
@@ -319,4 +320,37 @@ TEST_CASE("Dispatch with override func") {
     MessageBaz baz = future.get();
     REQUIRE(baz.value == true);
     REQUIRE(baz.count == 42 * 42);
+}
+
+TEST_CASE("Custom certificate validation function") {
+    Pkey pkey{};
+    Cert cert{pkey};
+    Dh ec{};
+
+    Server server{8009, pkey, ec, cert};
+    server.start();
+
+    Client client{};
+
+    auto promise = std::make_shared<std::promise<Cert>>();
+    auto future = promise->get_future();
+
+    client.setVerifyCallback([promise](Cert cert) {
+        std::cout << "received cert!" << std::endl;
+        promise->set_value(std::move(cert));
+        return true;
+    });
+
+    client.start();
+    REQUIRE_NOTHROW(client.connect("localhost", 8009));
+
+    // Wait for server to accept the peer
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+    REQUIRE(future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready);
+    auto received = future.get();
+
+    REQUIRE(received.pem() == cert.pem());
+
+    REQUIRE(received.getSubjectName() == "/C=EU/O=msgnet/CN=msgnet");
 }

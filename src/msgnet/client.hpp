@@ -1,5 +1,6 @@
 #pragma once
 
+#include "cert.hpp"
 #include "dispatcher.hpp"
 #include "peer.hpp"
 #include <thread>
@@ -17,11 +18,15 @@ public:
 
     void start(bool async = true);
 
-    void run();
+    asio::io_service& getIoService() {
+        return service;
+    }
 
     void stop();
 
     const std::string& getAddress() const;
+
+    void setVerifyCallback(std::function<bool(Cert)> callback);
 
     bool isConnected();
 

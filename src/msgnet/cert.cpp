@@ -7,6 +7,26 @@
 
 using namespace MsgNet;
 
+std::string Cert::certFromAsioContext(asio::ssl::verify_context& ctx) {
+    auto* x509 = X509_STORE_CTX_get_current_cert(ctx.native_handle());
+
+    auto bio = std::shared_ptr<BIO>(BIO_new(BIO_s_mem()), [](BIO* b) { BIO_free(b); });
+
+    if (!PEM_write_bio_X509(bio.get(), x509)) {
+        throw std::runtime_error("Failed to write BIO for the X509");
+    }
+
+    std::string raw;
+
+    const auto len = BIO_pending(bio.get());
+    raw.resize(len);
+    if (!BIO_read(bio.get(), raw.data(), len)) {
+        throw std::runtime_error("Failed to read X509");
+    }
+
+    return raw;
+}
+
 Cert::Cert(std::string raw) : raw{std::move(raw)} {
     auto bio = std::shared_ptr<BIO>(BIO_new(BIO_s_mem()), [](BIO* b) { BIO_free(b); });
 
@@ -20,6 +40,9 @@ Cert::Cert(std::string raw) : raw{std::move(raw)} {
     }
 
     x509 = std::shared_ptr<X509>(ptr, [](X509* p) { X509_free(p); });
+}
+
+Cert::Cert(asio::ssl::verify_context& ctx) : Cert{certFromAsioContext(ctx)} {
 }
 
 Cert::Cert(const Pkey& pkey) {
@@ -90,6 +113,25 @@ Cert::Cert(const Pkey& pkey) {
     if (!BIO_read(bio.get(), raw.data(), len)) {
         throw std::runtime_error("Failed to read X509");
     }
+}
+
+std::string Cert::getSubjectName() const {
+    if (!x509) {
+        return "";
+    }
+
+    auto name = X509_get_subject_name(x509.get());
+    if (!name) {
+        throw std::runtime_error("Failed to get X509 subject name");
+    }
+
+    char subjectName[256];
+    subjectName[0] = '\0';
+
+    X509_NAME_oneline(name, subjectName, 256);
+    subjectName[sizeof(subjectName) - 1] = '\0';
+
+    return subjectName;
 }
 
 Cert::~Cert() = default;
