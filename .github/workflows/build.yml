@@ -47,7 +47,6 @@ jobs:
             -DMSGNET_BUILD_TESTS=ON \
             -DMSGNET_BUILD_EXAMPLES=ON \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
-            --config Debug \
             .
 
       - name: Compile
