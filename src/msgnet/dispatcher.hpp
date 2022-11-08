@@ -53,7 +53,7 @@ private:
                 object.convert(req);
 
                 Res res = fn(peer, std::move(req));
-                peer->template send(res, reqId, true);
+                peer->send<Req>(res, reqId, true);
             };
         }
     };
