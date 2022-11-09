@@ -19,19 +19,20 @@ if (MSGNET_BUILD_TESTS)
 endif ()
 
 # The main library target
-file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
-file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp")
+file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp ${CMAKE_CURRENT_LIST_DIR}/src/*.hpp)
 if (WIN32)
-    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
+    add_library(${PROJECT_NAME} SHARED ${SOURCES})
 else ()
-    add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HEADERS})
+    add_library(${PROJECT_NAME} STATIC ${SOURCES})
 endif ()
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
 target_compile_definitions(${PROJECT_NAME} PRIVATE MSGNET_EXPORTS=1)
 target_link_libraries(${PROJECT_NAME}
         PUBLIC msgpackc msgpackc-cxx asio asio::asio OpenSSL::SSL OpenSSL::Crypto ${CMAKE_DL_LIBS}
         PRIVATE lz4::lz4)
-set_target_properties(${PROJECT_NAME} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES ${CMAKE_CURRENT_LIST_DIR}/src)
+target_include_directories(${PROJECT_NAME} PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/src>
+        $<INSTALL_INTERFACE:include>)
 
 # Enable the coverage for the tests
 if (MSGNET_TEST_COVERAGE)
@@ -92,8 +93,24 @@ endif ()
 
 # Install target
 install(TARGETS ${PROJECT_NAME}
-        RUNTIME DESTINATION bin
+        EXPORT MsgNetConfig
+        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
         LIBRARY DESTINATION lib
         ARCHIVE DESTINATION lib
+        FRAMEWORK DESTINATION "."
         )
-install(FILES ${HEADERS} DESTINATION include)
+# Install header files
+install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/src/" DESTINATION include FILES_MATCHING PATTERN "*.hpp")
+message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
+message("CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
+export(TARGETS
+        ${PROJECT_NAME}
+        NAMESPACE MsgNet::
+        FILE "${CMAKE_CURRENT_BINARY_DIR}/MsgNetConfig.cmake"
+        )
+install(EXPORT
+        MsgNetConfig
+        DESTINATION "share/MsgNet/cmake"
+        NAMESPACE MsgNet::
+        )
+

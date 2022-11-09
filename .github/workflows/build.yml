@@ -51,6 +51,10 @@ jobs:
         shell: bash
         run: |
           mkdir build
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            export CC=/usr/bin/gcc-9
+            export CXX=/usr/bin/g++-9
+          fi
           cmake \
             -B ./build \
             -G "${{ matrix.generator }}" ${{ matrix.arch }} \
