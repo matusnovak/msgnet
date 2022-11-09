@@ -131,23 +131,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
 
-      - name: Sanity check
-        shell: bash
-        run: |
-          sudo find /usr -name "llvm-symbolizer"
-          stat /usr/bin/llvm-symbolizer
-
       - name: Configure
         shell: bash
         run: |
           mkdir build
-          export CC=/usr/bin/clang
-          export CXX=/usr/bin/clang++
+          export CC=clang
+          export CXX=clang++
           cmake \
             -B ./build \
             -G "${{ matrix.generator }}" \
             -DMSGNET_BUILD_TESTS=ON \
-            -DLLVM_SYMBOLIZER_PATH=/usr/bin/llvm-symbolizer \
+            -DLLVM_SYMBOLIZER_PATH=/usr/lib/llvm-12/bin/llvm-symbolizer \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
 
