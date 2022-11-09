@@ -24,7 +24,7 @@ public:
         using Arg = T;
     };
 
-    using Callback = std::function<void(const msgpack::object* object)>;
+    using Callback = std::function<void(const msgpack::object& object)>;
 
     explicit Peer(ErrorHandler& errorHandler, Dispatcher& dispatcher, asio::io_service& service,
                   std::shared_ptr<Socket> socket);
@@ -86,9 +86,9 @@ private:
         const auto reqId = nextRequestId.fetch_add(1ULL);
 
         Handler handler{};
-        handler.callback = [fn](const msgpack::object* object) {
+        handler.callback = [fn](const msgpack::object& object) {
             Res res{};
-            object->convert(res);
+            object.convert(res);
 
             fn(std::move(res));
         };

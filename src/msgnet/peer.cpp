@@ -108,7 +108,7 @@ void MsgNet::Peer::handle(const uint64_t reqId, const msgpack::object& object) {
     auto it = requests.find(reqId);
     if (it != requests.end()) {
         try {
-            it->second.callback(&object);
+            it->second.callback(object);
             requests.erase(it);
         } catch (std::exception_ptr& e) {
             requests.erase(it);
