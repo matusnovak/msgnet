@@ -22,19 +22,16 @@ jobs:
             generator: 'Visual Studio 17 2022'
             arch: '-A x64'
             vcpkg_dir: 'C:\vcpkg'
-            coverage: 'OFF'
           - name: 'Linux'
             os: ubuntu-latest
             generator: 'Unix Makefiles'
             arch: ''
             vcpkg_dir: '/usr/local/share/vcpkg'
-            coverage: 'ON'
           - name: 'Mac OSX'
             os: macos-latest
             generator: 'Unix Makefiles'
             arch: ''
             vcpkg_dir: '/usr/local/share/vcpkg'
-            coverage: 'OFF'
 
     steps:
       - name: Checkout
@@ -51,16 +48,11 @@ jobs:
         shell: bash
         run: |
           mkdir build
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            export CC=/usr/bin/gcc-9
-            export CXX=/usr/bin/g++-9
-          fi
           cmake \
             -B ./build \
             -G "${{ matrix.generator }}" ${{ matrix.arch }} \
             -DMSGNET_BUILD_TESTS=ON \
             -DMSGNET_BUILD_EXAMPLES=ON \
-            -DDMSGNET_TEST_COVERAGE=${{ matrix.coverage }} \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
 
@@ -72,17 +64,3 @@ jobs:
       - name: Tests
         shell: bash
         run: cd build && ctest -C Debug --verbose
-
-      - name: Process the coverage
-        shell: bash
-        run: |
-          lcov --directory ./build --capture --output-file ./build/coverage.info
-          lcov --remove ./build/coverage.info '/usr/*' "${HOME}"'/.cache/*' '*/catch2/*' '*/test/*' --output-file ./build/coverage.info
-          lcov --list ./build/coverage.info
-        if: matrix.coverage == 'ON'
-
-      - name: Upload the coverage
-        shell: bash
-        run: |
-          bash <(curl -s https://codecov.io/bash) -f ./build/coverage.info || echo "Codecov did not collect coverage reports"
-        if: matrix.coverage == 'ON'

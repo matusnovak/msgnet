@@ -110,7 +110,7 @@ export(TARGETS
         )
 install(EXPORT
         MsgNetConfig
-        DESTINATION "share/MsgNet/cmake"
+        DESTINATION "share/MsgNet"
         NAMESPACE MsgNet::
         )
 
