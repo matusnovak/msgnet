@@ -1,7 +1,6 @@
 project(msgnet)
 cmake_minimum_required(VERSION 3.20)
 
-
 option(MSGNET_BUILD_TESTS "Build msgnet tests" OFF)
 option(MSGNET_BUILD_EXAMPLES "Build msgnet examples" OFF)
 option(MSGNET_TEST_COVERAGE "Build msgnet examples with coverage generation" OFF)
@@ -99,18 +98,20 @@ install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION lib
         FRAMEWORK DESTINATION "."
         )
+
 # Install header files
 install(DIRECTORY "${CMAKE_CURRENT_LIST_DIR}/src/" DESTINATION include FILES_MATCHING PATTERN "*.hpp")
-message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
-message("CMAKE_INSTALL_LIBDIR: ${CMAKE_INSTALL_LIBDIR}")
+
+# Export target
 export(TARGETS
         ${PROJECT_NAME}
         NAMESPACE MsgNet::
         FILE "${CMAKE_CURRENT_BINARY_DIR}/MsgNetConfig.cmake"
         )
+
+# Install the exported target
 install(EXPORT
         MsgNetConfig
-        DESTINATION "share/MsgNet"
+        DESTINATION "share/msgnet"
         NAMESPACE MsgNet::
         )
-
