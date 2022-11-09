@@ -38,7 +38,7 @@ TEST_CASE("Start and connect to the server") {
     Cert cert{pkey};
     Dh ec{};
 
-    for (auto i = 0; i < 10000; i++) {
+    for (auto i = 0; i < 100; i++) {
         Server server{8009, pkey, ec, cert};
         server.start();
         Client client{};
@@ -55,8 +55,7 @@ TEST_CASE("Start and connect to the server") {
 
         client.stop();
 
-        // TODO!
-        // REQUIRE(client.isConnected() == false);
+        REQUIRE(client.isConnected() == false);
     }
 }
 
@@ -189,9 +188,8 @@ TEST_CASE("Connect and disconnect from the server") {
     client.stop();
 
     // Wait for server to handle the disconnect
-    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
-    REQUIRE(peers.front()->isConnected() == false);
     REQUIRE(client.isConnected() == false);
 }
 

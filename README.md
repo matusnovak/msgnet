@@ -1,5 +1,7 @@
 # MsgNet
 
+[![build](https://github.com/matusnovak/msgnet/actions/workflows/build.yml/badge.svg?branch=master&event=push)](https://github.com/matusnovak/msgnet/actions/workflows/build.yml)
+
 A C++ networking library that supports RPC-like bidirectional messaging style using
 [Msgpack C++](https://github.com/msgpack/msgpack-c/tree/cpp_master) on top of TLS v1.3 via
 [Asio](https://think-async.com/Asio/) and [OpenSSL](https://github.com/openssl/openssl)

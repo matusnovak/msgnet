@@ -40,8 +40,8 @@ endif ()
 
 # Enable ASAN
 if (LLVM_SYMBOLIZER_PATH AND UNIX AND NOT APPLE)
-    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=leak -fno-omit-frame-pointer)
-    target_link_libraries(${PROJECT_NAME} PRIVATE lsan)
+    target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+    target_link_libraries(${PROJECT_NAME} PRIVATE asan)
 endif ()
 
 # All of the examples, each example file is a separate target
@@ -74,13 +74,13 @@ if (MSGNET_BUILD_TESTS)
 
     # Enable ASAN
     if (LLVM_SYMBOLIZER_PATH AND UNIX AND NOT APPLE)
-        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=leak -fno-omit-frame-pointer)
-        target_link_libraries(${PROJECT_NAME} PRIVATE lsan)
+        target_compile_options(${PROJECT_NAME} PRIVATE -fsanitize=address -fno-omit-frame-pointer)
+        target_link_libraries(${PROJECT_NAME} PRIVATE asan)
 
         set_property(TEST ${PROJECT_NAME}_tests APPEND PROPERTY
                 ENVIRONMENT "LSAN_SYMBOLIZER_PATH=${LLVM_SYMBOLIZER_PATH}")
         set_property(TEST ${PROJECT_NAME}_tests APPEND PROPERTY
-                ENVIRONMENT "LSAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/lsan.supp")
+                ENVIRONMENT "ASAN_OPTIONS=suppressions=${CMAKE_CURRENT_SOURCE_DIR}/asan.supp")
     endif ()
 
     # MinGW fix

@@ -40,20 +40,7 @@ void Peer::start() {
 }
 
 void Peer::close() {
-    if (socket) {
-        auto s = socket;
-        socket.reset();
-        s->lowest_layer().cancel();
-        s->async_shutdown([s](const asio::error_code ec) {
-            if (ec && ec != asio::error::eof) {
-                return;
-            }
-
-            asio::error_code ecc;
-            s->lowest_layer().close(ecc);
-            (void)ecc;
-        });
-    }
+    socket.reset();
 }
 
 void Peer::receive() {
@@ -120,8 +107,13 @@ void MsgNet::Peer::handle(const uint64_t reqId, const msgpack::object& object) {
     std::lock_guard<std::mutex> lock{mutex};
     auto it = requests.find(reqId);
     if (it != requests.end()) {
-        requests.erase(it);
-        it->second.callback(object);
+        try {
+            it->second.callback(&object);
+            requests.erase(it);
+        } catch (std::exception_ptr& e) {
+            requests.erase(it);
+            errorHandler.onUnhandledException(shared_from_this(), e);
+        }
     } else {
         errorHandler.onError(shared_from_this(), ::make_error_code(Error::UnexpectedResponse));
     }
