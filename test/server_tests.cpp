@@ -75,6 +75,9 @@ TEST_CASE("Send dummy packet to the server") {
     auto packet = std::make_shared<msgpack::sbuffer>();
     msgpack::pack(*packet, msg);
     client.sendPacket(packet);
+
+    client.stop();
+    server.stop();
 }
 
 struct MessageFoo {

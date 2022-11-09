@@ -19,11 +19,12 @@ if (MSGNET_BUILD_TESTS)
 endif ()
 
 # The main library target
-file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp ${CMAKE_CURRENT_LIST_DIR}/src/*.hpp)
+file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp)
+file(GLOB_RECURSE HEADERS "${CMAKE_CURRENT_LIST_DIR}/src/*.hpp")
 if (WIN32)
-    add_library(${PROJECT_NAME} SHARED ${SOURCES})
+    add_library(${PROJECT_NAME} SHARED ${SOURCES} ${HEADERS})
 else ()
-    add_library(${PROJECT_NAME} STATIC ${SOURCES})
+    add_library(${PROJECT_NAME} STATIC ${SOURCES} ${HEADERS})
 endif ()
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
 target_compile_definitions(${PROJECT_NAME} PRIVATE MSGNET_EXPORTS=1)
@@ -34,7 +35,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES $
 
 # Enable the coverage for the tests
 if (MSGNET_TEST_COVERAGE)
-    target_compile_options(${PROJECT_NAME} PRIVATE --coverage -g -O0)
+    target_compile_options(${PROJECT_NAME} PRIVATE -g -O0 --coverage)
     target_link_options(${PROJECT_NAME} PRIVATE --coverage)
 endif ()
 
@@ -68,7 +69,7 @@ if (MSGNET_BUILD_TESTS)
 
     # Enable the coverage for the tests
     if (MSGNET_TEST_COVERAGE)
-        target_compile_options(${PROJECT_NAME}_tests PRIVATE --coverage -g -O0)
+        target_compile_options(${PROJECT_NAME}_tests PRIVATE -g -O0 --coverage)
         target_link_options(${PROJECT_NAME}_tests PRIVATE --coverage)
     endif ()
 
@@ -88,3 +89,11 @@ if (MSGNET_BUILD_TESTS)
         target_compile_options(${PROJECT_NAME}_tests PRIVATE -Wa,-mbig-obj)
     endif ()
 endif ()
+
+# Install target
+install(TARGETS ${PROJECT_NAME}
+        RUNTIME DESTINATION bin
+        LIBRARY DESTINATION lib
+        ARCHIVE DESTINATION lib
+        )
+install(FILES ${HEADERS} DESTINATION include)
