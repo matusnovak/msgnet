@@ -1,6 +1,7 @@
 project(msgnet)
 cmake_minimum_required(VERSION 3.20)
 
+
 option(MSGNET_BUILD_TESTS "Build msgnet tests" OFF)
 option(MSGNET_BUILD_EXAMPLES "Build msgnet examples" OFF)
 option(MSGNET_TEST_COVERAGE "Build msgnet examples with coverage generation" OFF)
@@ -19,7 +20,11 @@ endif ()
 
 # The main library target
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp ${CMAKE_CURRENT_LIST_DIR}/src/*.hpp)
-add_library(${PROJECT_NAME} STATIC ${SOURCES})
+if (WIN32)
+    add_library(${PROJECT_NAME} STATIC ${SOURCES})
+else ()
+    add_library(${PROJECT_NAME} STATIC ${SOURCES})
+endif ()
 set_target_properties(${PROJECT_NAME} PROPERTIES CXX_STANDARD 17 CXX_EXTENSIONS ON)
 target_compile_definitions(${PROJECT_NAME} PRIVATE MSGNET_EXPORTS=1)
 target_link_libraries(${PROJECT_NAME}

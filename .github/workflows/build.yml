@@ -74,10 +74,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v1
 
+      - name: Install lcov
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lcov
+
       - name: Configure
         shell: bash
         run: |
           mkdir build
+          export CC=/usr/bin/gcc-9
+          export CXX=/usr/bin/g++-9
           cmake \
             -B ./build \
             -G "${{ matrix.generator }}" \
@@ -122,6 +130,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v1
+
+      - name: Sanity check
+        shell: bash
+        run: |
+          sudo find /usr -name "llvm-symbolizer"
+          stat /usr/bin/llvm-symbolizer
 
       - name: Configure
         shell: bash
