@@ -21,7 +21,7 @@ endif ()
 # The main library target
 file(GLOB_RECURSE SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/*.cpp ${CMAKE_CURRENT_LIST_DIR}/src/*.hpp)
 if (WIN32)
-    add_library(${PROJECT_NAME} DYNAMIC ${SOURCES})
+    add_library(${PROJECT_NAME} SHARED ${SOURCES})
 else ()
     add_library(${PROJECT_NAME} STATIC ${SOURCES})
 endif ()

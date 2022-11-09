@@ -26,7 +26,7 @@ public:
 
     void postDispatch(std::function<void()> fn) override;
 
-    virtual void onAcceptSuccess(const std::shared_ptr<Peer>& peer);
+    virtual void onAcceptSuccess(std::shared_ptr<Peer> peer);
 
 private:
     static asio::ip::tcp::endpoint getEndpoint(unsigned int port);

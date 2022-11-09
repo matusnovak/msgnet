@@ -141,7 +141,7 @@ jobs:
             -B ./build \
             -G "${{ matrix.generator }}" \
             -DMSGNET_BUILD_TESTS=ON \
-            -DLLVM_SYMBOLIZER_PATH=/usr/lib/llvm-12/bin/llvm-symbolizer \
+            -DLLVM_SYMBOLIZER_PATH=/usr/lib/llvm-11/bin/llvm-symbolizer \
             -DCMAKE_TOOLCHAIN_FILE=${{ matrix.vcpkg_dir }}/scripts/buildsystems/vcpkg.cmake \
             .
 

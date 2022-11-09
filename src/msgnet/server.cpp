@@ -68,6 +68,6 @@ void Server::postDispatch(std::function<void()> fn) {
     service.post(std::forward<decltype(fn)>(fn));
 }
 
-void Server::onAcceptSuccess(const std::shared_ptr<Peer>& peer) {
+void Server::onAcceptSuccess(std::shared_ptr<Peer> peer) {
     std::cout << "New peer: " << peer->getAddress() << std::endl;
 }

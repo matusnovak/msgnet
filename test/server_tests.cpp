@@ -38,7 +38,7 @@ TEST_CASE("Start and connect to the server") {
     Cert cert{pkey};
     Dh ec{};
 
-    for (auto i = 0; i < 100; i++) {
+    for (auto i = 0; i < 10000; i++) {
         Server server{8009, pkey, ec, cert};
         server.start();
         Client client{};
@@ -131,7 +131,7 @@ public:
         return baz;
     }
 
-    void onAcceptSuccess(const std::shared_ptr<Peer>& peer) override {
+    void onAcceptSuccess(std::shared_ptr<Peer> peer) override {
         std::lock_guard<std::mutex> lock{mutex};
         peers.push_back(peer);
     }
