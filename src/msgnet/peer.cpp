@@ -40,7 +40,14 @@ void Peer::start() {
 }
 
 void Peer::close() {
-    socket.reset();
+    if (socket) {
+        auto s = socket;
+        socket->async_shutdown([s](asio::error_code ec) {
+            (void)s;
+            s->lowest_layer().shutdown(asio::socket_base::shutdown_both, ec);
+        });
+        socket.reset();
+    }
 }
 
 void Peer::receive() {

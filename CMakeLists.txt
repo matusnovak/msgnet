@@ -1,4 +1,4 @@
-project(msgnet)
+project(MsgNet)
 cmake_minimum_required(VERSION 3.20)
 
 option(MSGNET_BUILD_TESTS "Build msgnet tests" OFF)
