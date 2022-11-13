@@ -111,18 +111,25 @@ void Peer::receiveObject(std::shared_ptr<msgpack::object_handle> oh) {
 }
 
 void MsgNet::Peer::handle(const uint64_t reqId, const msgpack::object& object) {
-    std::lock_guard<std::mutex> lock{mutex};
-    auto it = requests.find(reqId);
-    if (it != requests.end()) {
+    Callback callback;
+
+    {
+        std::lock_guard<std::mutex> lock{mutex};
+        auto it = requests.find(reqId);
+        if (it != requests.end()) {
+            std::swap(it->second.callback, callback);
+            requests.erase(it);
+        } else {
+            errorHandler.onError(shared_from_this(), ::make_error_code(Error::UnexpectedResponse));
+        }
+    }
+
+    if (callback) {
         try {
-            it->second.callback(object);
-            requests.erase(it);
+            callback(object);
         } catch (std::exception_ptr& e) {
-            requests.erase(it);
             errorHandler.onUnhandledException(shared_from_this(), e);
         }
-    } else {
-        errorHandler.onError(shared_from_this(), ::make_error_code(Error::UnexpectedResponse));
     }
 }
 
