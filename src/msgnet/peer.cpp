@@ -1,6 +1,5 @@
 #include "peer.hpp"
 #include "server.hpp"
-#include <fmt/format.h>
 
 using namespace MsgNet;
 
