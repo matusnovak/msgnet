@@ -11,6 +11,7 @@ Peer::Peer(ErrorHandler& errorHandler, Dispatcher& dispatcher, asio::io_service&
     DecompressionStream{blockBytes},
     errorHandler{errorHandler},
     dispatcher{dispatcher},
+    runFlag{true},
     strand{service},
     socket{std::move(socket)} {
 
@@ -29,17 +30,15 @@ void Peer::start() {
 }
 
 void Peer::close() {
-    if (socket) {
-        auto s = socket;
-        socket->async_shutdown([s](asio::error_code ec) {
-            (void)s;
-            s->lowest_layer().shutdown(asio::socket_base::shutdown_both, ec);
-        });
-        socket.reset();
-    }
+    runFlag.store(false);
+    socket.reset();
 }
 
 void Peer::receive() {
+    if (!runFlag.load()) {
+        return;
+    }
+
     const auto b = asio::buffer(receiveBuffer.data(), receiveBuffer.size());
     auto self = this->shared_from_this();
 
@@ -53,7 +52,9 @@ void Peer::receive() {
                 self->errorHandler.onUnhandledException(self, e);
             }
 
-            self->receive();
+            if (self->runFlag.load()) {
+                self->receive();
+            }
         }
     });
 }
@@ -111,6 +112,10 @@ void MsgNet::Peer::handle(const uint64_t reqId, const msgpack::object& object) {
 }
 
 void MsgNet::Peer::sendBuffer(std::shared_ptr<std::vector<char>> buffer) {
+    if (!runFlag.load()) {
+        return;
+    }
+
     auto self = shared_from_this();
     const auto b = asio::buffer(buffer->data(), buffer->size());
 
@@ -125,7 +130,7 @@ void MsgNet::Peer::sendBuffer(std::shared_ptr<std::vector<char>> buffer) {
 }
 
 bool Peer::isConnected() {
-    return socket && socket->lowest_layer().is_open();
+    return runFlag.load() && socket && socket->lowest_layer().is_open();
 }
 
 std::string MsgNet::toString(const asio::ip::tcp::endpoint& endpoint) {

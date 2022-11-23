@@ -57,27 +57,6 @@ TEST_CASE("Start and connect to the server") {
     }
 }
 
-/*TEST_CASE("Send dummy packet to the server") {
-    Pkey pkey{};
-    Cert cert{pkey};
-    Dh ec{};
-
-    Server server{8009, pkey, ec, cert};
-    server.start();
-    Client client{};
-    client.start();
-    client.connect("localhost", 8009);
-
-    std::string msg = "Hello world!";
-
-    auto packet = std::make_shared<msgpack::sbuffer>();
-    msgpack::pack(*packet, msg);
-    client.sendPacket(packet);
-
-    client.stop();
-    server.stop();
-}*/
-
 struct MessageFoo {
     std::string msg;
 

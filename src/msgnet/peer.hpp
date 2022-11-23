@@ -68,6 +68,10 @@ public:
      * Internal use only, do not call.
      */
     template <typename Req> void send(const Req& message, uint64_t reqId, bool isResponse) {
+        if (!runFlag.load()) {
+            return;
+        }
+
         // Only one thread can write to the compression stream at the time.
         std::lock_guard<std::mutex> lock{mutex};
 
@@ -146,6 +150,7 @@ private:
 
     ErrorHandler& errorHandler;
     Dispatcher& dispatcher;
+    std::atomic_bool runFlag;
     asio::io_context::strand strand;
     std::shared_ptr<Socket> socket;
     std::string address;
