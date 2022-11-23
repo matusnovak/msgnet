@@ -1,8 +1,6 @@
 #include <catch.hpp>
 #include <cstring>
 #include <iostream>
-#include <lz4.h>
-#include <lz4frame.h>
 #include <msgnet/client.hpp>
 #include <msgnet/server.hpp>
 
@@ -59,7 +57,7 @@ TEST_CASE("Start and connect to the server") {
     }
 }
 
-TEST_CASE("Send dummy packet to the server") {
+/*TEST_CASE("Send dummy packet to the server") {
     Pkey pkey{};
     Cert cert{pkey};
     Dh ec{};
@@ -78,7 +76,7 @@ TEST_CASE("Send dummy packet to the server") {
 
     client.stop();
     server.stop();
-}
+}*/
 
 struct MessageFoo {
     std::string msg;

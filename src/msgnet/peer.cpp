@@ -1,34 +1,24 @@
 #include "peer.hpp"
 #include "server.hpp"
-#include <iostream>
-#include <lz4.h>
+#include <fmt/format.h>
 
 using namespace MsgNet;
 
 static const size_t blockBytes = 1024 * 8;
 
-struct Peer::Lz4 {
-    Lz4() : encodeBody{}, encode{&encodeBody}, decodeBody{}, decode{&decodeBody} {
-        LZ4_initStream(encode, sizeof(*encode));
-        LZ4_setStreamDecode(decode, nullptr, 0);
-    }
-
-    LZ4_stream_t encodeBody{};
-    LZ4_stream_t* encode;
-    LZ4_streamDecode_t decodeBody{};
-    LZ4_streamDecode_t* decode;
-    char readBuffer[blockBytes];
-};
-
 Peer::Peer(ErrorHandler& errorHandler, Dispatcher& dispatcher, asio::io_service& service,
            std::shared_ptr<Socket> socket) :
+    CompressionStream{blockBytes},
+    DecompressionStream{blockBytes},
     errorHandler{errorHandler},
     dispatcher{dispatcher},
-    lz4{std::make_unique<Lz4>()},
     strand{service},
     socket{std::move(socket)} {
 
+    this->socket->lowest_layer().set_option(asio::ip::tcp::no_delay{true});
+
     address = toString(this->socket->lowest_layer().remote_endpoint());
+    receiveBuffer.resize(1024);
 }
 
 Peer::~Peer() {
@@ -51,32 +41,20 @@ void Peer::close() {
 }
 
 void Peer::receive() {
-    const auto b = asio::buffer(lz4->readBuffer, sizeof(Lz4::readBuffer));
+    const auto b = asio::buffer(receiveBuffer.data(), receiveBuffer.size());
     auto self = this->shared_from_this();
 
     socket->async_read_some(b, [self](const asio::error_code ec, const size_t length) {
         if (ec) {
             self->errorHandler.onError(self, ec);
         } else {
-            self->unp.reserve_buffer(sizeof(Lz4::readBuffer));
-            const auto decBytes =
-                LZ4_decompress_safe_continue(self->lz4->decode, self->lz4->readBuffer, self->unp.buffer(),
-                                             static_cast<int>(length), sizeof(Lz4::readBuffer));
-
-            if (decBytes <= 0) {
-                self->errorHandler.onError(self, ::make_error_code(Error::DecompressError));
-            } else {
-                self->unp.buffer_consumed(decBytes);
-
-                auto oh = std::make_shared<msgpack::object_handle>();
-
-                while (self->unp.next(*oh)) {
-                    self->receiveObject(std::move(oh));
-                    oh = std::make_shared<msgpack::object_handle>();
-                }
-
-                self->receive();
+            try {
+                self->accept(self->receiveBuffer.data(), length);
+            } catch (std::exception_ptr& e) {
+                self->errorHandler.onUnhandledException(self, e);
             }
+
+            self->receive();
         }
     });
 }
@@ -114,11 +92,11 @@ void MsgNet::Peer::handle(const uint64_t reqId, const msgpack::object& object) {
     Callback callback;
 
     {
-        std::lock_guard<std::mutex> lock{mutex};
-        auto it = requests.find(reqId);
-        if (it != requests.end()) {
+        std::lock_guard<std::mutex> lock{requests.mutex};
+        auto it = requests.map.find(reqId);
+        if (it != requests.map.end()) {
             std::swap(it->second.callback, callback);
-            requests.erase(it);
+            requests.map.erase(it);
         } else {
             errorHandler.onError(shared_from_this(), ::make_error_code(Error::UnexpectedResponse));
         }
@@ -131,30 +109,6 @@ void MsgNet::Peer::handle(const uint64_t reqId, const msgpack::object& object) {
             errorHandler.onUnhandledException(shared_from_this(), e);
         }
     }
-}
-
-void Peer::sendPacket(std::shared_ptr<msgpack::sbuffer> packet) {
-    auto self = shared_from_this();
-
-    strand.post([self, packet]() {
-        auto compressed = std::make_shared<std::vector<char>>();
-        compressed->resize(LZ4_COMPRESSBOUND(packet->size()));
-
-        const auto cmpBytes =
-            LZ4_compress_fast_continue(self->lz4->encode, packet->data(), compressed->data(),
-                                       static_cast<int>(packet->size()), static_cast<int>(compressed->size()), 1);
-        if (cmpBytes <= 0) {
-            throw std::runtime_error("Unable to compress packet");
-        }
-
-        compressed->resize(cmpBytes);
-
-        if (self->socket && self->socket->lowest_layer().is_open()) {
-            self->sendBuffer(std::move(compressed));
-        } else {
-            self->errorHandler.onError(self, asio::error::connection_aborted);
-        }
-    });
 }
 
 void MsgNet::Peer::sendBuffer(std::shared_ptr<std::vector<char>> buffer) {
