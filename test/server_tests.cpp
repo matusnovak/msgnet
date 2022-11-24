@@ -17,7 +17,7 @@ TEST_CASE("Start and close the server") {
 TEST_CASE("Connect to non existing server and expect connection refused") {
     Client client{};
     client.start();
-    REQUIRE_THROWS_WITH(client.connect("localhost", 8009), "Unable to connect to the address");
+    REQUIRE_THROWS_WITH(client.connect("localhost", 8009), "Connection refused");
 }
 
 TEST_CASE("Connect to stalled server and expect timeout") {
@@ -270,7 +270,7 @@ TEST_CASE("Dispatch with override func") {
     });
 
     // Wait for server to receive the message
-    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // Server should not handle the message at this time
     auto bars = server.getBars();
@@ -312,9 +312,14 @@ TEST_CASE("Custom certificate validation function") {
     auto promise = std::make_shared<std::promise<Cert>>();
     auto future = promise->get_future();
 
-    client.setVerifyCallback([promise](Cert cert) {
-        std::cout << "received cert!" << std::endl;
-        promise->set_value(std::move(cert));
+    std::atomic_bool verified{false};
+
+    client.setVerifyCallback([&verified, promise](Cert cert) {
+        std::cout << "received cert! subject: " << cert.getSubjectName() << std::endl;
+        if (!verified.load()) {
+            verified.store(true);
+            promise->set_value(std::move(cert));
+        }
         return true;
     });
 
@@ -322,8 +327,9 @@ TEST_CASE("Custom certificate validation function") {
     REQUIRE_NOTHROW(client.connect("localhost", 8009));
 
     // Wait for server to accept the peer
-    std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
 
+    REQUIRE(verified.load() == true);
     REQUIRE(future.wait_for(std::chrono::milliseconds(1)) == std::future_status::ready);
     auto received = future.get();
 

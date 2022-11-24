@@ -32,6 +32,23 @@ public:
     virtual void onError(std::error_code ec);
     virtual void onError(const std::shared_ptr<Peer>& peer, std::error_code ec);
     virtual void onUnhandledException(const std::shared_ptr<Peer>& peer, std::exception_ptr& eptr);
+
+    void setErrorCallback(std::function<void(std::error_code)> fn) {
+        onErrorCallback = std::move(fn);
+    }
+
+    void setPeerErrorCallback(std::function<void(const std::shared_ptr<Peer>&, std::error_code)> fn) {
+        onPeerErrorCallback = std::move(fn);
+    }
+
+    void setPeerExceptionCallback(std::function<void(const std::shared_ptr<Peer>&, std::exception_ptr&)> fn) {
+        onPeerExceptionCallback = std::move(fn);
+    }
+
+private:
+    std::function<void(std::error_code)> onErrorCallback;
+    std::function<void(const std::shared_ptr<Peer>&, std::error_code)> onPeerErrorCallback;
+    std::function<void(const std::shared_ptr<Peer>&, std::exception_ptr&)> onPeerExceptionCallback;
 };
 
 inline std::error_code make_error_code(MsgNet::Error e) {

@@ -36,18 +36,30 @@ std::error_condition ErrorCategory::default_error_condition(int ev) const noexce
 }
 
 void ErrorHandler::onError(std::error_code ec) {
-    std::cout << "Error: " << ec.message() << std::endl;
+    if (onErrorCallback) {
+        onErrorCallback(ec);
+    } else {
+        std::cout << "Error: " << ec.message() << std::endl;
+    }
 }
 
 void ErrorHandler::onError(const std::shared_ptr<Peer>& peer, std::error_code ec) {
-    std::cout << "Error: " << ec.message() << " from: " << peer->getAddress() << std::endl;
-    peer->close();
+    if (setPeerErrorCallback) {
+        setPeerErrorCallback(peer, ec);
+    } else {
+        std::cout << "Error: " << ec.message() << " from: " << peer->getAddress() << std::endl;
+        peer->close();
+    }
 }
 
 void ErrorHandler::onUnhandledException(const std::shared_ptr<Peer>& peer, std::exception_ptr& eptr) {
-    try {
-        std::rethrow_exception(eptr);
-    } catch (std::exception& e) {
-        std::cout << "Exception: " << e.what() << " from: " << peer->getAddress() << std::endl;
+    if (onPeerExceptionCallback) {
+        onPeerExceptionCallback(peer, eptr);
+    } else {
+        try {
+            std::rethrow_exception(eptr);
+        } catch (std::exception& e) {
+            std::cout << "Exception: " << e.what() << " from: " << peer->getAddress() << std::endl;
+        }
     }
 }

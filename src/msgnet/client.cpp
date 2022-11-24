@@ -8,6 +8,9 @@ Client::Client() :
     work{std::make_unique<asio::io_service::work>(service)},
     ssl{asio::ssl::context::tlsv13} {
 
+    ssl.set_options(asio::ssl::context::default_workarounds | asio::ssl::context::no_sslv2 |
+                    asio::ssl::context::no_sslv3 | asio::ssl::context::no_tlsv1_1 | asio::ssl::context::no_tlsv1_2 |
+                    asio::ssl::context::single_dh_use);
     ssl.set_verify_mode(asio::ssl::verify_none);
 }
 
@@ -42,30 +45,18 @@ void Client::connect(const std::string& address, unsigned int port, int timeout)
     }
 
     const auto endpoints = endpointsFuture.get();
-    auto endpoint = endpoints.end();
 
-    for (auto it = endpoints.begin(); it != endpoints.end(); ++it) {
-        auto connect = socket->next_layer().async_connect(*it, asio::use_future);
-        if (connect.wait_until(tp) != std::future_status::ready) {
-            throw std::runtime_error("Timeout connecting to the address");
-        }
-
-        try {
-            connect.get();
-            endpoint = it;
-        } catch (std::exception& e) {
-            continue;
-        }
+    auto connect = asio::async_connect(socket->lowest_layer(), endpoints, asio::use_future);
+    if (connect.wait_until(tp) != std::future_status::ready) {
+        throw std::runtime_error("Timeout connecting to the address");
     }
-
-    if (endpoint == endpoints.end()) {
-        throw std::runtime_error("Unable to connect to the address");
-    }
+    connect.get();
 
     auto handshake = socket->async_handshake(asio::ssl::stream_base::client, asio::use_future);
     if (handshake.wait_until(tp) != std::future_status::ready) {
         throw std::runtime_error("Timeout TLS handshake");
     }
+    handshake.get();
 
     peer = std::make_shared<Peer>(*this, *this, service, socket);
     peer->start();
