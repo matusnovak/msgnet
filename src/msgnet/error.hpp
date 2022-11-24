@@ -1,6 +1,7 @@
 #pragma once
 
 #include "library.hpp"
+#include <functional>
 #include <memory>
 #include <system_error>
 
