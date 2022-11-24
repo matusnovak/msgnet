@@ -44,8 +44,8 @@ void ErrorHandler::onError(std::error_code ec) {
 }
 
 void ErrorHandler::onError(const std::shared_ptr<Peer>& peer, std::error_code ec) {
-    if (setPeerErrorCallback) {
-        setPeerErrorCallback(peer, ec);
+    if (onPeerErrorCallback) {
+        onPeerErrorCallback(peer, ec);
     } else {
         std::cout << "Error: " << ec.message() << " from: " << peer->getAddress() << std::endl;
         peer->close();
