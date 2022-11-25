@@ -17,7 +17,12 @@ TEST_CASE("Start and close the server") {
 TEST_CASE("Connect to non existing server and expect connection refused") {
     Client client{};
     client.start();
+#ifdef _WIN32
+    REQUIRE_THROWS_WITH(client.connect("localhost", 8009),
+                        "No connection could be made because the target machine actively refused it.");
+#else
     REQUIRE_THROWS_WITH(client.connect("localhost", 8009), "Connection refused");
+#endif
 }
 
 TEST_CASE("Connect to stalled server and expect timeout") {
@@ -28,6 +33,7 @@ TEST_CASE("Connect to stalled server and expect timeout") {
 
     Client client{};
     client.start();
+
     REQUIRE_THROWS_WITH(client.connect("localhost", 8009), "Timeout TLS handshake");
 }
 
